@@ -14,7 +14,7 @@ export const Footer = () => {
       </Link>
 
       <Link
-        href='/'
+        href='/privacidad'
         className="mx-3"
       >
         Privacidad & Legal
