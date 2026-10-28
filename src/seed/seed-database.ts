@@ -9,9 +9,13 @@ async function main() {
   // 1. Borrar registros previos
   // await Promise.all( [
 
+  await prisma.chatMessage.deleteMany();
+  await prisma.stockReservation.deleteMany();
+
   await prisma.orderAddress.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.conversation.deleteMany();
 
 
   await prisma.userAddress.deleteMany();

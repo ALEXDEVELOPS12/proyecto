@@ -29,6 +29,29 @@ enum Role {
   user
 }
 
+enum OrderChannel {
+  web
+  whatsapp
+}
+
+enum ReservationStatus {
+  active
+  confirmed
+  expired
+  cancelled
+}
+
+enum ConversationStatus {
+  active
+  escalated
+  closed
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
 model Category {
   id      String    @id @default(uuid())
   name    String    @unique
@@ -40,6 +63,8 @@ model Product {
   title       String
   description String
   inStock     Int
+  // Unidades apartadas por reservas activas (WhatsApp). Disponible = inStock - reserved
+  reserved    Int      @default(0)
   price       Float    @default(0)
   sizes       Size[]   @default([])
   slug        String   @unique
@@ -51,8 +76,9 @@ model Product {
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
 
-  ProductImage ProductImage[]
-  OrderItem    OrderItem[]
+  ProductImage     ProductImage[]
+  OrderItem        OrderItem[]
+  StockReservation StockReservation[]
 
   @@index([gender])
 }
@@ -119,12 +145,24 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relaciones
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  // Canal de origen del pedido
+  channel        OrderChannel @default(web)
+  // Evita registrar dos veces el mismo pedido (reintentos de n8n o mensajes repetidos)
+  idempotencyKey String?      @unique
+  // Teléfono del cliente cuando el pedido viene de WhatsApp
+  customerPhone  String?
 
-  OrderItem    OrderItem[]
-  OrderAddress OrderAddress?
+  // Relaciones
+  // Opcional: los pedidos de WhatsApp pueden no tener cuenta en la tienda
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId String?
+
+  OrderItem        OrderItem[]
+  OrderAddress     OrderAddress?
+  StockReservation StockReservation[]
 
   transactionId String?
 }
@@ -159,4 +197,67 @@ model OrderAddress {
 
   Order   Order  @relation(fields: [orderId], references: [id])
   orderId String @unique
+}
+
+// ===== Canal WhatsApp (n8n) =====
+
+// Apartado temporal de stock mientras el cliente paga (15 minutos)
+model StockReservation {
+  id             String            @id @default(uuid())
+  quantity       Int
+  size           Size
+  status         ReservationStatus @default(active)
+  expiresAt      DateTime
+  // Id del mensaje de WhatsApp que originó la reserva: evita reservas duplicadas
+  idempotencyKey String            @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+
+  order   Order?  @relation(fields: [orderId], references: [id])
+  orderId String?
+
+  @@index([status, expiresAt])
+}
+
+// Una conversación por número de WhatsApp
+model Conversation {
+  id           String             @id @default(uuid())
+  phone        String             @unique
+  customerName String?
+  status       ConversationStatus @default(active)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  ChatMessage      ChatMessage[]
+  StockReservation StockReservation[]
+  Order            Order[]
+}
+
+// Cada mensaje entrante (cliente) y saliente (bot)
+model ChatMessage {
+  id          String           @id @default(uuid())
+  direction   MessageDirection
+  text        String
+  // Id que asigna WhatsApp: evita guardar o procesar dos veces el mismo mensaje
+  waMessageId String?          @unique
+  // Intención detectada por el agente (consultar_stock, reservar, ...)
+  intent      String?
+
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+
+  @@index([conversationId, createdAt])
 }

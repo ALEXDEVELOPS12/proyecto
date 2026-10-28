@@ -86,8 +86,9 @@ export const placeOrder = async (
       const updatedProducts = await Promise.all(updatedProductsPromises);
 
       // Verificar valores negativos en las existencia = no hay stock
+      // Se descuentan también las unidades reservadas por WhatsApp
       updatedProducts.forEach((product) => {
-        if (product.inStock < 0) {
+        if (product.inStock - product.reserved < 0) {
           throw new Error(`${product.title} no tiene inventario suficiente`);
         }
       });
