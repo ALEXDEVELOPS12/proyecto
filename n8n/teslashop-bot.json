@@ -1,0 +1,407 @@
+{
+  "name": "TeslaShop Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "11a72f39-aeb2-4988-8369-9f9e0ce7e9f5",
+      "name": "WhatsApp Trigger",
+      "webhookId": "cae7b4af-741f-4936-a591-3b7c0e3742e4",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "OEomHoYFL5HPlBNn",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "e148ea9b-446d-48b1-9ba1-ec3aa2707091",
+              "leftValue": "={{ $json.messages?.[0]?.type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e85cadf2-4d31-47ae-b2af-56295d029415",
+      "name": "¿Es texto?"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1411695855358205",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $('AI Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        -128
+      ],
+      "id": "78a484de-4943-4632-8aa7-55c617c8ef28",
+      "name": "Send message",
+      "webhookId": "4668e471-7403-455a-aaac-202cc6863ea4",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "JBlkH3ts5QxaWKzM",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://proyecto-phi-wine.vercel.app/api/bot/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].text.body }}"
+            },
+            {
+              "name": "direction",
+              "value": "inbound"
+            },
+            {
+              "name": "waMessageId",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].id }}"
+            },
+            {
+              "name": "customerName",
+              "value": "={{ $('WhatsApp Trigger').item.json.contacts[0].profile.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        -128
+      ],
+      "id": "12096513-17f1-4ea2-9269-30a41f5cfce3",
+      "name": "Guardar mensaje (inbound)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "edyV9NXTznlJ5Syj",
+          "name": "TeslaShop API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Teléfono del cliente: {{ $('WhatsApp Trigger').item.json.messages[0].from }}\nID del mensaje (úsalo como idempotencyKey al reservar): {{ $('WhatsApp Trigger').item.json.messages[0].id }}\n\nConversación reciente:\n{{ $('Guardar mensaje (inbound)').item.json.history.map(m => (m.direction === 'inbound' ? 'Cliente: ' : 'Asistente: ') + m.text).join('\\n') }}\n\nResponde al último mensaje del cliente.\n\n",
+        "options": {
+          "systemMessage": "Eres el asistente de ventas de Teslo Shop, una tienda de ropa inspirada en Tesla, y atiendes a los clientes por WhatsApp.\n\n## Tono y formato\n- Responde siempre en español, de forma amable, breve y clara (máximo 5 líneas, o una lista corta).\n- Usa como mucho un emoji por mensaje.\n- WhatsApp no muestra Markdown: no uses encabezados (#), tablas ni enlaces con formato.\n- Para listas usa guiones simples (-).\n- Para resaltar usa UN solo asterisco (*así*), nunca dos (**así**).\n- Los nombres de los productos están en inglés: escríbelos tal como vienen de la herramienta.\n- Nunca muestres al cliente identificadores internos (id, slug, uuid).\n\n## Herramientas\n- buscar_productos: busca productos por término en inglés y devuelve id, nombre, precio, tallas y unidades disponibles. Traduce lo que pide el cliente: camiseta = shirt, sudadera = hoodie, suéter = sweatshirt, chaqueta = jacket, gorra = hats.\n- reservar: aparta un producto por 15 minutos. Necesita el id del producto (de buscar_productos), la talla y la cantidad.\n\n## Reglas obligatorias\n1. Nunca inventes productos, precios, tallas ni disponibilidad. Todo dato de un producto debe salir de buscar_productos.\n2. Cada vez que menciones productos, precios o disponibilidad, llama a buscar_productos en este mismo turno, aunque el historial ya tenga esos datos: el stock cambia cuando otros clientes reservan.\n3. Si una herramienta falla, dilo con honestidad y pide al cliente que lo intente de nuevo en unos minutos.\n4. Antes de reservar, confirma con el cliente el producto, la talla y la cantidad. Llama a reservar solo cuando el cliente lo confirme de forma explícita (\"sí\", \"dale\", \"apártalo\"...).\n5. Para reservar usa el id que devolvió buscar_productos en este turno. Si no lo tienes, vuelve a buscar el producto antes de reservar.\n6. La cantidad máxima por reserva es 10 unidades.\n7. Tallas válidas: XS, S, M, L, XL, XXL, XXXL. Si el producto no tiene la talla pedida, ofrece las que sí tiene.\n8. Cuando reservar responda con éxito, avisa siempre con este texto, usando el campo expiresAtLocal para la hora: \"Tienes 15 minutos para completar el pago (hasta las {hora}). Si no se paga en ese tiempo, la reserva se cancela y el producto vuelve a estar disponible.\"\n9. Si reservar responde out_of_stock, explica que otro cliente acaba de apartar la última unidad o que ya no hay suficientes, indica cuántas quedan si viene el dato available, y ofrece otra talla o un producto parecido.\n10. Si reservar responde invalid_size, ofrece las tallas disponibles de ese producto. Si responde not_found, vuelve a buscar el producto.\n11. Nunca pidas datos de tarjeta, contraseñas ni documentos de identidad.\n12. Si el cliente pide algo ajeno a la tienda (soporte técnico, temas personales, otros negocios), responde con cortesía que solo puedes ayudar con productos y pedidos de Teslo Shop.\n13. Si el cliente escribe \"eliminar mis datos\", confirma que el equipo atenderá la solicitud en un máximo de 7 días.\n14. No pidas correo electrónico ni prometas enlaces de pago: el pago no se gestiona por este canal.\n15. Responde siempre directamente al cliente, en segunda persona. Nunca describas tu razonamiento ni hables del cliente en tercera persona.\n16. No afirmes que una reserva anterior sigue activa: las reservas del historial pueden haber vencido. Si el cliente vuelve a pedir un producto, trátalo como una reserva nueva.\n\n## Contexto que recibes\n- En el mensaje del usuario vienen el teléfono del cliente y su conversación reciente (historial). Úsalos para no repetir preguntas.\n- La hora oficial es la de Nicaragua (America/Managua).\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        -128
+      ],
+      "id": "5d5f96dd-a4a1-42a2-8a45-a611d94e5bf1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        544,
+        80
+      ],
+      "id": "6c973f16-f563-489c-a7ea-e60cd0ae194c",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca productos de Teslo Shop. Devuelve id, slug, título, precio, tallas y unidades disponibles. Úsala SIEMPRE antes de dar información de productos. Los productos están en inglés: traduce la búsqueda (camiseta=shirt, sudadera=hoodie, suéter=sweatshirt, chaqueta=jacket, gorra=hats).",
+        "url": "https://proyecto-phi-wine.vercel.app/api/bot/products",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        832,
+        80
+      ],
+      "id": "471c6723-48fb-454d-bd2e-fca933b49ab6",
+      "name": "buscar_productos",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "edyV9NXTznlJ5Syj",
+          "name": "TeslaShop API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Aparta un producto por 15 minutos para el cliente. Úsala SOLO después de que el cliente confirme producto, talla y cantidad. Usa el id del producto que devolvió buscar_productos. Responde con la hora límite de pago (expiresAtLocal) o con el motivo del rechazo (reason: out_of_stock, invalid_size, not_found).",
+        "method": "POST",
+        "url": "https://proyecto-phi-wine.vercel.app/api/bot/reservations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"
+            },
+            {
+              "name": "idempotencyKey",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].id }}"
+            },
+            {
+              "name": "productId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters2_Value', ``, 'string') }}"
+            },
+            {
+              "name": "size",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters3_Value', ``, 'string') }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters4_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        928,
+        176
+      ],
+      "id": "a68a0621-3249-4f75-be6f-3b117f42e114",
+      "name": "reservar",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "edyV9NXTznlJ5Syj",
+          "name": "TeslaShop API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://proyecto-phi-wine.vercel.app/api/bot/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            },
+            {
+              "name": "direction",
+              "value": "outbound"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1184,
+        16
+      ],
+      "id": "286117f5-3a03-412e-99cd-a204abdc49d2",
+      "name": "Guardar respuesta",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "edyV9NXTznlJ5Syj",
+          "name": "TeslaShop API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "¿Es texto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es texto?": {
+      "main": [
+        [
+          {
+            "node": "Guardar mensaje (inbound)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar mensaje (inbound)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        [
+          {
+            "node": "Guardar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_productos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reservar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f9f4d38d-a789-4b96-ba0a-5fc439eb5bcf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bba83ca9b66d454a35475afed58203a55ba5887cc86898924ab4159e6279f58f"
+  },
+  "nodeGroups": [],
+  "id": "5vijeuM03PhX391r",
+  "tags": []
+}

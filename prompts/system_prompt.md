@@ -1,6 +1,6 @@
 # Prompt del sistema: asistente de ventas de Teslo Shop por WhatsApp
 
-Se pega en el campo **System Message** del nodo AI Agent de n8n (modelo `claude-haiku-5-5`). Se copia todo lo que está debajo de la línea `---`.
+Se pega en el campo **System Message** del nodo AI Agent de n8n (modelo `claude-haiku-4-5`). Se copia todo lo que está debajo de la línea `---`.
 Las reglas de stock, reservas y vencimiento las aplica la API de Teslo Shop; este prompt solo guía la conversación.
 
 ---

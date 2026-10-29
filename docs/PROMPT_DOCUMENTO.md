@@ -76,7 +76,7 @@ Está desplegada en Vercel: https://proyecto-phi-wine.vercel.app
 
 ### Tipo de chatbot y enfoque técnico
 - **Chatbot generativo basado en LLM con herramientas (tool calling / function calling)**, también llamado *agente conversacional*. No es RAG vectorial: en lugar de embeddings y búsqueda semántica, el modelo consulta datos **estructurados y en tiempo real** (catálogo y stock en PostgreSQL) mediante herramientas que llaman a una API. Esto se conoce como *tool-augmented generation*.
-- **Modelo:** Claude Haiku 5.5 de Anthropic (`claude-haiku-5-5`), usado mediante el nodo AI Agent de n8n (basado en LangChain). Se eligió por bajo costo, baja latencia y buen soporte de herramientas.
+- **Modelo:** Claude Haiku 4.5 de Anthropic (`claude-haiku-4-5`), usado mediante el nodo AI Agent de n8n (basado en LangChain). Se eligió por bajo costo, baja latencia y buen soporte de herramientas.
 - **Orquestador:** n8n Cloud.
 - **Canal:** WhatsApp Cloud API de Meta (app "TeslaShop Bot", publicada; número de prueba +1 555 143 4400).
 - **Principio de arquitectura: "n8n conversa, TeslaShop decide".**
@@ -98,7 +98,7 @@ Está desplegada en Vercel: https://proyecto-phi-wine.vercel.app
 1. **WhatsApp Trigger:** recibe el mensaje (webhook de Meta).
 2. **¿Es texto?** (nodo If): descarta avisos de estado (sent/delivered/read) y mensajes que no son texto.
 3. **Guardar mensaje (inbound):** `POST /api/bot/messages`. Guarda el mensaje (deduplicado por `waMessageId`) y devuelve los últimos 10 como historial.
-4. **AI Agent** (Claude Haiku 5.5):
+4. **AI Agent** (Claude Haiku 4.5):
    - **System Message:** versionado en `prompts/system_prompt.md`.
    - **Prompt de usuario:** teléfono del cliente, ID del mensaje y conversación reciente formateada como "Cliente: … / Asistente: …".
    - **Herramienta `buscar_productos`** (GET /products). Su descripción indica traducir al inglés, porque el catálogo está en inglés (sudadera → hoodie, camiseta → shirt).
@@ -229,7 +229,7 @@ Propón un conjunto de 15 a 20 diálogos de prueba para `evaluation/test_convers
 ### Costos (enfoque de bajo costo)
 - WhatsApp Cloud API con número de prueba: gratis (máximo 5 destinatarios verificados).
 - n8n Cloud: prueba de 14 días con 1000 ejecuciones. El workflow se exporta a JSON.
-- Claude Haiku 5.5: el modelo de menor costo, fracciones de centavo por mensaje.
+- Claude Haiku 4.5: el modelo de menor costo, fracciones de centavo por mensaje.
 - Vercel Hobby y Neon gratuito.
 - Las reservas vencen sin cron.
 
