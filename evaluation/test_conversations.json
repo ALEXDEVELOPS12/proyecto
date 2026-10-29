@@ -1,0 +1,426 @@
+{
+  "descripcion": "Conjunto de diálogos de prueba del agente de ventas por WhatsApp de TeslaShop (informe final, sección 15.2, Tabla 20). Los campos de 'resultado' se llenan al ejecutar cada caso; de ahí salen las métricas de la sección 16.6.",
+  "version_prompt": "prompts/system_prompt.md (workflow v2.1)",
+  "canal": "WhatsApp, número de prueba +1 555 143 4400",
+  "instrucciones": [
+    "Ejecutar cada caso desde un número verificado, en una conversación nueva o después de varios mensajes sin relación.",
+    "Escribir los turnos en orden y esperar cada respuesta antes de enviar el siguiente.",
+    "Anotar la intención que se observó, si fue correcta, si la tarea fue exitosa y si se creó una reserva (revisar la tabla StockReservation o los Logs de n8n).",
+    "Aviso: T06 y T07 crean reservas reales en producción; vencen solas a los 15 minutos (más 2 de gracia).",
+    "Valores permitidos: intencion_correcta y tarea_exitosa = true | false; reserva_creada = true | false."
+  ],
+  "casos": [
+    {
+      "id": "T01",
+      "tipo": "exito",
+      "turnos": [
+        "Hola"
+      ],
+      "intencion_esperada": "saludo",
+      "entidades_esperadas": {},
+      "herramienta_esperada": null,
+      "resultado_esperado": "Saluda y ofrece ayuda con el catálogo",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "saludo",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Saludó y ofreció ayuda. Recordó una reserva pendiente de una prueba anterior (contexto arrastrado del historial)."
+      }
+    },
+    {
+      "id": "T02",
+      "tipo": "exito",
+      "turnos": [
+        "¿Qué sudaderas tienen?"
+      ],
+      "intencion_esperada": "consultar_catalogo",
+      "entidades_esperadas": {
+        "producto": "hoodie"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Lista sudaderas reales con precio y tallas",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "consultar_catalogo",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Listó 5 productos reales con precio y tallas. Incluyó la Women's Cropped Puffer Jacket, que es chaqueta, no sudadera."
+      }
+    },
+    {
+      "id": "T03",
+      "tipo": "exito",
+      "turnos": [
+        "¿Tienen camisetas?"
+      ],
+      "intencion_esperada": "consultar_catalogo",
+      "entidades_esperadas": {
+        "producto": "shirt"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Busca 'shirt' y lista resultados reales",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "consultar_catalogo",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Listó 3 camisetas reales con precio, tallas y unidades disponibles."
+      }
+    },
+    {
+      "id": "T04",
+      "tipo": "exito",
+      "turnos": [
+        "¿Tienen gorras?"
+      ],
+      "intencion_esperada": "consultar_catalogo",
+      "entidades_esperadas": {
+        "producto": "hats"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Busca 'hats' y lista resultados reales",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "consultar_catalogo",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Listó 2 gorras reales (Relaxed T Logo Hat y Thermal Cuffed Beanie)."
+      }
+    },
+    {
+      "id": "T05",
+      "tipo": "exito",
+      "precondicion": "Ejecutar justo después de T02",
+      "turnos": [
+        "¿La 3D Wordmark la tienen en M?"
+      ],
+      "intencion_esperada": "consultar_disponibilidad_talla",
+      "entidades_esperadas": {
+        "producto": "3D Large Wordmark Pullover Hoodie",
+        "talla": "M"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Vuelve a consultar y responde con datos actuales",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "consultar_disponibilidad_talla",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Indicó que no hay talla M y ofreció XS, S, XL y XXL."
+      }
+    },
+    {
+      "id": "T06",
+      "tipo": "exito",
+      "turnos": [
+        "Quiero la 3D Wordmark en talla S",
+        "Sí"
+      ],
+      "intencion_esperada": [
+        "seleccionar_producto",
+        "confirmar_reserva"
+      ],
+      "entidades_esperadas": {
+        "producto": "3D Large Wordmark Pullover Hoodie",
+        "talla": "S",
+        "cantidad": 1
+      },
+      "herramienta_esperada": [
+        "buscar_productos",
+        "reservar"
+      ],
+      "resultado_esperado": "Confirma antes de reservar; reserva 201 con hora de vencimiento",
+      "debe_reservar": true,
+      "resultado": {
+        "intencion_detectada": "seleccionar_producto → confirmar_reserva",
+        "intencion_correcta": true,
+        "tarea_exitosa": false,
+        "reserva_creada": true,
+        "observaciones": "Interpretó '3D Wordmark' como la camiseta Men's 3D Large Wordmark Tee (no la sudadera). Pidió cantidad y confirmación, pero luego dio dos respuestas contradictorias sobre el stock (solo XL/XXL y después XS/S/M), mezclando datos de otro producto. Al final reservó talla S con aviso de 15 minutos (hasta 11:23 p. m.). Se cuenta como tarea no exitosa por informar stock incorrecto."
+      }
+    },
+    {
+      "id": "T07",
+      "tipo": "exito",
+      "turnos": [
+        "Quiero 2 de la Raven en L",
+        "Sí, apártalas"
+      ],
+      "intencion_esperada": [
+        "seleccionar_producto",
+        "confirmar_reserva"
+      ],
+      "entidades_esperadas": {
+        "producto": "Men's Raven Lightweight Hoodie",
+        "talla": "L",
+        "cantidad": 2
+      },
+      "herramienta_esperada": [
+        "buscar_productos",
+        "reservar"
+      ],
+      "resultado_esperado": "Reserva de 2 unidades o aviso de stock insuficiente",
+      "debe_reservar": true,
+      "resultado": {
+        "intencion_detectada": "seleccionar_producto → confirmar_reserva",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": true,
+        "observaciones": "Primer intento: el cliente pegó una lista de varias líneas copiada de la respuesta del bot; la ejecución 131 de n8n falló en 43 ms y no hubo respuesta. Reintento (23:16) con 'Quiero 2 Women's Raven Slouchy Crew Sweatshirt en talla L' → 'si apartalas': confirmó, reservó 2 unidades con aviso de 15 minutos (hasta 11:32 p. m.) y total de $220. Pidió el correo para enviar un enlace de PayPal que el sistema no envía (promesa no respaldada)."
+      }
+    },
+    {
+      "id": "T08",
+      "tipo": "sin_confirmacion",
+      "turnos": [
+        "Quiero la 3D Wordmark en S",
+        "Mejor no"
+      ],
+      "intencion_esperada": "seleccionar_producto",
+      "entidades_esperadas": {
+        "producto": "3D Large Wordmark Pullover Hoodie",
+        "talla": "S"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "No reserva",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "seleccionar_producto",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Ante 'Mejor no' no reservó y ofreció seguir ayudando. Resolvió el producto como la camiseta 3D Wordmark por el contexto previo."
+      }
+    },
+    {
+      "id": "T09",
+      "tipo": "talla_inexistente",
+      "turnos": [
+        "Quiero la 3D Wordmark en talla 5XL"
+      ],
+      "intencion_esperada": "seleccionar_producto",
+      "entidades_esperadas": {
+        "producto": "3D Large Wordmark Pullover Hoodie",
+        "talla": "5XL"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Indica que la talla no es válida y ofrece las disponibles",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "seleccionar_producto",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Indicó que 5XL no está disponible y ofreció XS, S y M (de la camiseta 3D Wordmark, por el contexto previo)."
+      }
+    },
+    {
+      "id": "T10",
+      "tipo": "talla_sin_stock",
+      "turnos": [
+        "Tienen la 3D Large Wordmark Pullover Hoodie en talla M?"
+      ],
+      "intencion_esperada": "consultar_disponibilidad_talla",
+      "entidades_esperadas": {
+        "producto": "3D Large Wordmark Pullover Hoodie",
+        "talla": "M"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Ofrece las tallas disponibles",
+      "debe_reservar": false,
+      "evidencia_previa": "Figura 14 (prueba informal del 28/10/2026)",
+      "resultado": {
+        "intencion_detectada": "consultar_disponibilidad_talla",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Mensaje enviado en dos partes ('Tienen la 3D Large Wordmark Pullover' + 'Hoodie en talla M?'). Indicó que no hay M y ofreció XS, S, XL y XXL."
+      }
+    },
+    {
+      "id": "T11",
+      "tipo": "producto_inexistente",
+      "turnos": [
+        "¿Tienen zapatos de fútbol?"
+      ],
+      "intencion_esperada": "consultar_catalogo",
+      "entidades_esperadas": {
+        "producto": "zapatos de fútbol"
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Dice que no hay coincidencias; no inventa productos",
+      "debe_reservar": false,
+      "evidencia_previa": "Figura 15 (prueba informal del 28/10/2026, con 'pantalones o zapatos')",
+      "resultado": {
+        "intencion_detectada": "consultar_catalogo",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Respondió que no tiene zapatos de fútbol y ofreció las categorías reales; no inventó productos."
+      }
+    },
+    {
+      "id": "T12",
+      "tipo": "sin_stock",
+      "precondicion": "Producto con disponible = 0 (inStock - reserved = 0). Requiere preparar el dato en la base; la regla del servidor ya está verificada por tests/concurrency.test.js",
+      "turnos": [
+        "Quiero <producto sin stock> en talla <talla>",
+        "Sí"
+      ],
+      "intencion_esperada": [
+        "seleccionar_producto",
+        "confirmar_reserva"
+      ],
+      "entidades_esperadas": {},
+      "herramienta_esperada": [
+        "buscar_productos",
+        "reservar"
+      ],
+      "resultado_esperado": "409; explica que otro cliente la apartó y ofrece alternativas",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": null,
+        "intencion_correcta": null,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "No ejecutado por WhatsApp. Verificado a nivel de API con npm run test:bot (8/8) (pruebas de concurrencia: 409 out_of_stock). Excluido de las métricas conversacionales."
+      }
+    },
+    {
+      "id": "T13",
+      "tipo": "cantidad_excedida",
+      "turnos": [
+        "Quiero 15 sudaderas"
+      ],
+      "intencion_esperada": "seleccionar_producto",
+      "entidades_esperadas": {
+        "producto": "hoodie",
+        "cantidad": 15
+      },
+      "herramienta_esperada": "buscar_productos",
+      "resultado_esperado": "Indica el máximo de 10 unidades",
+      "debe_reservar": false,
+      "evidencia_previa": "Figura 17 (prueba informal del 28/10/2026, con '15 camisetas Men's Turbine Short Sleeve Tee en talla M')",
+      "resultado": {
+        "intencion_detectada": "seleccionar_producto",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Indicó el máximo de 10 unidades y pidió producto y talla."
+      }
+    },
+    {
+      "id": "T14",
+      "tipo": "mensaje_duplicado",
+      "precondicion": "Se prueba a nivel de API (no se puede reenviar el mismo waMessageId desde WhatsApp): POST /api/bot/reservations dos veces con la misma idempotencyKey",
+      "turnos": [
+        "<mismo mensaje con el mismo waMessageId>"
+      ],
+      "intencion_esperada": null,
+      "entidades_esperadas": {},
+      "herramienta_esperada": "reservar",
+      "resultado_esperado": "duplicate:true; no se aparta otra unidad",
+      "debe_reservar": false,
+      "evidencia_previa": "Verificado en producción (sección 16.3) y en tests/bot-api.test.js",
+      "resultado": {
+        "intencion_detectada": null,
+        "intencion_correcta": null,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "No ejecutado por WhatsApp. Verificado a nivel de API con npm run test:bot (8/8) y en producción (sección 16.3). Excluido de las métricas conversacionales."
+      }
+    },
+    {
+      "id": "T15",
+      "tipo": "fuera_de_alcance",
+      "turnos": [
+        "¿Me ayudas con mi tarea de cálculo?"
+      ],
+      "intencion_esperada": "fuera_de_alcance",
+      "entidades_esperadas": {},
+      "herramienta_esperada": null,
+      "resultado_esperado": "Fallback cortés: solo temas de la tienda",
+      "debe_reservar": false,
+      "evidencia_previa": "Figura 16 (prueba informal del 28/10/2026)",
+      "resultado": {
+        "intencion_detectada": "fuera_de_alcance",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Fallback cortés. Error gramatical: 'te las aparté' en lugar de 'te las aparto'."
+      }
+    },
+    {
+      "id": "T16",
+      "tipo": "fuera_de_alcance",
+      "turnos": [
+        "Mi laptop no enciende, ¿qué hago?"
+      ],
+      "intencion_esperada": "fuera_de_alcance",
+      "entidades_esperadas": {},
+      "herramienta_esperada": null,
+      "resultado_esperado": "Fallback cortés; no da soporte técnico",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "fuera_de_alcance",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Fallback cortés; recomendó contactar al soporte de la laptop sin dar soporte técnico."
+      }
+    },
+    {
+      "id": "T17",
+      "tipo": "datos_sensibles",
+      "turnos": [
+        "Te paso mi número de tarjeta para pagar"
+      ],
+      "intencion_esperada": "fuera_de_alcance",
+      "entidades_esperadas": {},
+      "herramienta_esperada": null,
+      "resultado_esperado": "No solicita ni acepta datos de tarjeta",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "fuera_de_alcance",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Rechazó los datos de tarjeta. Prometió 'un enlace para pagar' que el sistema no envía (promesa no respaldada; el System Message de n8n aún incluía la regla de PayPal)."
+      }
+    },
+    {
+      "id": "T18",
+      "tipo": "privacidad",
+      "turnos": [
+        "Quiero que eliminen mis datos"
+      ],
+      "intencion_esperada": "eliminar_datos",
+      "entidades_esperadas": {},
+      "herramienta_esperada": null,
+      "resultado_esperado": "Acoge la solicitud e informa el plazo de 7 días",
+      "debe_reservar": false,
+      "resultado": {
+        "intencion_detectada": "eliminar_datos",
+        "intencion_correcta": true,
+        "tarea_exitosa": true,
+        "reserva_creada": false,
+        "observaciones": "Confirmó la solicitud y el plazo de 7 días."
+      }
+    }
+  ],
+  "ejecucion": {
+    "fecha": "2026-10-28, 23:02–23:16 (hora de Nicaragua)",
+    "casos_conversacionales": 16,
+    "casos_api": [
+      "T12",
+      "T14"
+    ],
+    "nota": "El System Message publicado en n8n aún contenía la regla de PayPal al momento de la prueba."
+  }
+}
