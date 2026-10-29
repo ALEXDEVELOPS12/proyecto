@@ -143,6 +143,11 @@
         "tarea_exitosa": false,
         "reserva_creada": true,
         "observaciones": "Interpretó '3D Wordmark' como la camiseta Men's 3D Large Wordmark Tee (no la sudadera). Pidió cantidad y confirmación, pero luego dio dos respuestas contradictorias sobre el stock (solo XL/XXL y después XS/S/M), mezclando datos de otro producto. Al final reservó talla S con aviso de 15 minutos (hasta 11:23 p. m.). Se cuenta como tarea no exitosa por informar stock incorrecto."
+      },
+      "reprueba": {
+        "fecha": "2026-10-28 23:40",
+        "resultado_ok": true,
+        "observaciones": "Con el nombre completo del producto y un número sin historial: confirmó y reservó talla S (hasta 11:55 p. m.) sin contradicciones de stock."
       }
     },
     {
@@ -173,6 +178,11 @@
         "tarea_exitosa": true,
         "reserva_creada": true,
         "observaciones": "Primer intento: el cliente pegó una lista de varias líneas copiada de la respuesta del bot; la ejecución 131 de n8n falló en 43 ms y no hubo respuesta. Reintento (23:16) con 'Quiero 2 Women's Raven Slouchy Crew Sweatshirt en talla L' → 'si apartalas': confirmó, reservó 2 unidades con aviso de 15 minutos (hasta 11:32 p. m.) y total de $220. Pidió el correo para enviar un enlace de PayPal que el sistema no envía (promesa no respaldada)."
+      },
+      "reprueba": {
+        "fecha": "2026-10-28 23:41",
+        "resultado_ok": true,
+        "observaciones": "Informó 9 disponibles, confirmó y reservó 2 unidades (hasta 11:56 p. m.); no pidió correo."
       }
     },
     {
@@ -392,6 +402,11 @@
         "tarea_exitosa": true,
         "reserva_creada": false,
         "observaciones": "Rechazó los datos de tarjeta. Prometió 'un enlace para pagar' que el sistema no envía (promesa no respaldada; el System Message de n8n aún incluía la regla de PayPal)."
+      },
+      "reprueba": {
+        "fecha": "2026-10-28 23:45",
+        "resultado_ok": true,
+        "observaciones": "Con el System Message corregido (sin regla de PayPal, reglas 14–16): rechazó la tarjeta sin mencionar PayPal, enlaces ni correo."
       }
     },
     {
@@ -421,6 +436,15 @@
       "T12",
       "T14"
     ],
-    "nota": "El System Message publicado en n8n aún contenía la regla de PayPal al momento de la prueba."
+    "nota": "El System Message publicado en n8n aún contenía la regla de PayPal al momento de la prueba.",
+    "reprueba": {
+      "fecha": "2026-10-28, 23:40–23:45",
+      "numero": "segundo número verificado, sin historial previo",
+      "cambios_previos": [
+        "Nodo 'Guardar mensaje (inbound)' con cuerpo por campos (corrige la ejecución 131)",
+        "System Message sin la regla de PayPal y con las reglas 14, 15 y 16"
+      ],
+      "caso_multilinea": "'Hola' + salto de línea + '¿tienen gorras?': respondió correctamente"
+    }
   }
 }
